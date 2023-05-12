@@ -1,2 +1,2 @@
 # veribom
-Never ⌘f your pdf again!
+Automate the BoM checking process
