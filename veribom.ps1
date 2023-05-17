@@ -1,32 +1,43 @@
+
 $veribom_dir = Split-Path $MyInvocation.MyCommand.Path
+
+$normal_number  = "(\d{5,8}\.?\w?(-\d{,2})?)"
+$us_number      = "(US\d{4})"
+$kit_number     = "(KIT ?#\d{1,4})"
+$part_number    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)?)?" + "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")" + "\n? ?(\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)?"
+#                 not a ref#           leading quantity                             the main part number                               trailing quantity, maybe on the next line
+
 function pdf_to_text($pdf_path) {
     # Dont forget to unblock this guy during install
 	Add-Type -Path "$veribom_dir\itextsharp.dll"
 	$pdf = New-Object iTextSharp.text.pdf.pdfreader -ArgumentList $pdf_path
-    [string]$text_out = @()
-	for ($page = 1; $page -le $pdf.NumberOfPages; $page++){
-		$text=[iTextSharp.text.pdf.parser.PdfTextExtractor]::GetTextFromPage($pdf,$page)
-		$text_out += $text;
-	}	
+    $page = 1
+	$text=[iTextSharp.text.pdf.parser.PdfTextExtractor]::GetTextFromPage($pdf,$page)
 	$pdf.Close()
-    return $text_out
+    return $text
 }
 
 function pdftext_to_bom($text) {
+
+    # Get rid of all lines that are longer than max_line_length
+    $max_line_length = 25
+    $text = $text -split "`n" 
+    $text = $text.where({$_.length -lt $max_line_length})
+    $text = $text -join "`n"
+
     $bom = @()
-    $part_number_format = "((\d)X)? ?(\d{5,8}) ?((\d)X)?" # A 5-8 digit number that might have a leading/ trailing quantity
-    foreach ($callout in (($text -split "`n") -match $part_number_format)) {
-        $null = $callout -match $part_number_format
-        $part_number = [string] $matches[3]
-        $quantity_1  = [float]  $matches[2]
-        $quantity_2  = [float]  $matches[5]
+    $callouts = $text | Select-String -Pattern $part_number -AllMatches
+    foreach ($callout in $callouts.Matches) {
+        $part_number = [string] $callout.Groups[3].Value
+        $quantity_1  = [float]  $callout.Groups[2].Value
+        $quantity_2  = [float]  $callout.Groups[9].Value
         $quantity = $quantity_1 + $quantity_2
         if ($quantity -eq 0){ $quantity = 1 }
 
         # If the part number already exists, update the quantity
         if ($bom -and $bom.part_number.contains($part_number)) {
-            $index = $bom.IndexOf($part_number)
-            $bom.quantity[$index] += $quantity
+            $index = $bom.part_number.IndexOf($part_number)
+            $bom[$index].quantity += $quantity
         } else {
             $bom += [pscustomobject]@{part_number=$part_number;quantity=$quantity}
         }
@@ -96,13 +107,19 @@ function combine_boms($excel_bom, $pdf_bom) {
 
 
 # MAIN SCRIPT STARTS HERE
+Clear-Host
 
-Write-Host "select an excel bom..." -NoNewline
-$xls_file = get_file -title "Select an Excel BoM"
-Write-Host "done"
-Write-Host "select a pdf bom..." -NoNewline
-$pdf_file = get_file -title "Select a PDF BoM"
-Write-Host "done"
+# Write-Host "select an excel bom..." -NoNewline
+# $xls_file = get_file -title "Select an Excel BoM"
+# if ($xls_file -eq "") {return}
+# Write-Host "done"
+$xls_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.xlsx"
+
+# Write-Host "select a pdf drawing..." -NoNewline
+# $pdf_file = get_file -title "Select a PDF BoM"
+# if ($pdf_file -eq "") {return}
+# Write-Host "done"
+$pdf_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.PDF"
 
 $pdf_bom = pdf_to_bom $pdf_file
 $xls_bom = excel_to_bom $xls_file
