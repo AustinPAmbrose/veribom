@@ -39,4 +39,10 @@ if ($policy_problem) {
 }
 
 # Now for the actual downloading
-"veribom will be installed in --> $home\.veribom"
+Write-Host "veribom will be installed to --> $home\.veribom"
+Write-Host "downloading..." -NoNewline
+Invoke-WebRequest "https://github.com/AustinPAmbrose/veribom/raw/main/release.zip" -OutFile "$home\downloads\release.zip"
+Write-Host "done!"
+Write-Host "installing..." -NoNewline
+New-Item "$home\.veribom" -ItemType Directory -ErrorAction SilentlyContinue
+Expand-Archive "$home\downloads\release.zip" -DestinationPath "$home\.veribom" -Force
