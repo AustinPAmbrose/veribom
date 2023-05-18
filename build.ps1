@@ -47,8 +47,8 @@ Copy-Item -Path ./veribom.ps1, ./itextsharp.dll `
           -Destination ./release
 
 # Push that mofo to origin
-git add "./release/*.*"
-git commit -am $next_version.ToString() --quiet
-git push --quiet
+$null = git add "./release/*.*"
+$null = git commit -am $next_version.ToString() --quiet
+$null = git push --quiet
 ""
 "done!"
