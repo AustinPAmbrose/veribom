@@ -1,7 +1,7 @@
 
 $veribom_dir = Split-Path $MyInvocation.MyCommand.Path
 
-$normal_number  = "(\d{5,8}\.?\w?(-\d{,2})?)"
+$normal_number  = "(\d{5,8}\.?\w?(-?\d{0,2})?)"
 $us_number      = "(US\d{4})"
 $kit_number     = "(KIT ?#\d{1,4})"
 $part_number    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)?)?" + "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")" + "\n? ?(\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)?"
@@ -29,8 +29,8 @@ function pdftext_to_bom($text) {
     $callouts = $text | Select-String -Pattern $part_number -AllMatches
     foreach ($callout in $callouts.Matches) {
         $part_number = [string] $callout.Groups[3].Value
-        $quantity_1  = [float]  $callout.Groups[2].Value
-        $quantity_2  = [float]  $callout.Groups[9].Value
+        $quantity_1  = [double] $callout.Groups[2].Value
+        $quantity_2  = [double] $callout.Groups[9].Value
         $quantity = $quantity_1 + $quantity_2
         if ($quantity -eq 0){ $quantity = 1 }
 
@@ -68,7 +68,7 @@ function csv_to_bom ($csv_path) {
     # Returns a table of parts 
     $csv = Import-Csv $csv_path -Header "part_number", "description", "uom", "quantity"
     $csv = $csv | Select-Object -Property * -ExcludeProperty description,uom
-    $csv = $csv[3..($csv.length -1)]          # remove the header
+    $csv = $csv[3..($csv.length -1)]           # remove the header
     $bom = $csv.where({$_.part_number -ne ""}) # remove empty elements
     return $bom 
 }
@@ -89,7 +89,7 @@ function combine_boms($excel_bom, $pdf_bom) {
     $bom = @()
     # Add the excel parts to the bom
     foreach ($i in 0..($excel_bom.length-1)) {
-        $bom += [pscustomobject]@{part_number=$excel_bom.part_number[$i];xls=$excel_bom.quantity[$i];pdf=" "}
+        $bom += [pscustomobject]@{part_number=$excel_bom.part_number[$i];xls=[double]$excel_bom.quantity[$i];pdf=" "}
     }
     #Add the pdf parts to the bom
     foreach ($pdf_part_number in $pdf_bom.part_number) {
@@ -99,10 +99,51 @@ function combine_boms($excel_bom, $pdf_bom) {
             $bom[$loc].pdf = $pdf_quantity
         }
         else {
-            $bom += [pscustomobject]@{part_number=$pdf_part_number;xls=" ";pdf=$pdf_quantity}
+            $bom += [pscustomobject]@{part_number=$pdf_part_number;xls=" ";pdf=[double]$pdf_quantity}
         }
     }
-    return $bom
+    $bom = $bom | Sort-Object part_number
+    $bom = $bom | Format-Table `
+        @{
+            Name='Part Number'
+            Align="left"
+            Expression={
+                if ($_.pdf -eq $_.xls) {
+                    $color = "0"
+                } else {
+                    $color = "31"
+                }
+                $e = [char]27                    
+                "$e[${color}m$($_.part_number)${e}[0m"
+            }
+        }, `
+        @{
+            Name='XLS'
+            Align="right"
+            Expression={
+                if ($_.pdf -eq $_.xls) {
+                    $color = "0"
+                } else {
+                    $color = "31"
+                }
+                $e = [char]27                    
+                "$e[${color}m$($_.xls)${e}[0m"
+            }
+        }, `
+        @{
+            Name='PDF'
+            Align="left"
+            Expression={
+                if ($_.pdf -eq $_.xls) {
+                    $color = "0"
+                } else {
+                    $color = "31"
+                }
+                $e = [char]27                    
+                "$e[${color}m$($_.pdf)${e}[0m"
+            }
+        }
+    return $bom 
 }
 
 
@@ -124,4 +165,4 @@ $pdf_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\
 $pdf_bom = pdf_to_bom $pdf_file
 $xls_bom = excel_to_bom $xls_file
 
-combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom
+combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom 
