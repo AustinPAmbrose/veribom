@@ -42,12 +42,14 @@ switch (Read-Host) {
 }
 Update-ScriptFileInfo ./veribom.ps1 -Version $next_version
 
-# The script is updated now. Move everything we need into the release folder
+# The script is updated now. Move everything we need into a zip file
 Copy-Item -Path ./veribom.ps1, ./itextsharp.dll `
           -Destination ./release
+Compress-Archive -Path ./release -DestinationPath ./release.zip -Force
+Remove-Item ./release -Recurse -Force
 
 # Push that mofo to origin
-$null = git add "./release/*.*"
+$null = git add "./release.zip"
 $null = git commit -am $next_version.ToString() --quiet
 $null = git push --quiet
 ""
