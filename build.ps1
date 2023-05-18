@@ -46,12 +46,12 @@ Update-ScriptFileInfo ./veribom.ps1 -Version $next_version
 $items_to_release = @("./veribom.ps1", "./itextsharp.dll")
 New-Item -Path./temp_dir -ItemType Directory -ErrorAction SilentlyContinue
 Copy-Item -Path $items_to_release -Destination ./temp_dir
-Get-ChildItem ./temp_dir -Recurse | Compress-Archive -DestinationPath ./release.zip -Force
+Get-ChildItem ./temp_dir -Recurse | Compress-Archive -DestinationPath ./release.zip -Force | Out-Null
 Remove-Item ./temp_dir -Recurse -Force
 
 # Push that mofo to origin
-$null = git add "./release.zip"
-$null = git commit -am $next_version.ToString() --quiet
-$null = git push --quiet
+git add "./release.zip"
+git commit -am $next_version.ToString() --quiet
+git push --quiet
 ""
 "done!"
