@@ -1,4 +1,49 @@
 
+<#PSScriptInfo
+
+.VERSION 0.0.3
+
+.GUID 1eb7878d-24c4-4677-87b7-478a7502bd37
+
+.AUTHOR aambrose
+
+.COMPANYNAME 
+
+.COPYRIGHT 
+
+.TAGS 
+
+.LICENSEURI 
+
+.PROJECTURI 
+
+.ICONURI 
+
+.EXTERNALMODULEDEPENDENCIES 
+
+.REQUIREDSCRIPTS 
+
+.EXTERNALSCRIPTDEPENDENCIES 
+
+.RELEASENOTES
+
+
+#> 
+
+
+
+
+
+
+
+<# 
+
+.DESCRIPTION 
+ automate the bom checking process! 
+
+#> 
+
+
 $veribom_dir = Split-Path $MyInvocation.MyCommand.Path
 
 $normal_number  = "(\d{5,8}\.?\w?(-?\d{0,2})?)"
