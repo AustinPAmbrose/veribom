@@ -43,5 +43,7 @@ switch (Read-Host) {
 Update-ScriptFileInfo ./veribom.ps1 -Version $next_version
 
 # The script is updated now... go ahead and push it to main!
-git commit -am $next_version.ToString()
-git push
+git commit -am $next_version.ToString() --quiet
+git push --quiet
+""
+"done"
