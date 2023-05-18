@@ -43,10 +43,11 @@ switch (Read-Host) {
 Update-ScriptFileInfo ./veribom.ps1 -Version $next_version
 
 # The script is updated now. Move everything we need into a zip file
+New-Item -Path ./temp_dir -ItemType Directory
 Copy-Item -Path ./veribom.ps1, ./itextsharp.dll `
-          -Destination ./release
-Compress-Archive -Path ./release -DestinationPath ./release.zip -Force
-Remove-Item ./release -Recurse -Force
+          -Destination ./temp_dir
+Compress-Archive - ./temp_dir -DestinationPath ./release.zip -Force
+Remove-Item ./temp_dir -Recurse -Force
 
 # Push that mofo to origin
 $null = git add "./release.zip"
