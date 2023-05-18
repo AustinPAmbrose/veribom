@@ -46,7 +46,7 @@ Update-ScriptFileInfo ./veribom.ps1 -Version $next_version
 $items_to_release = @("./veribom.ps1", "./itextsharp.dll")
 New-Item -Path./temp_dir -ItemType Directory -ErrorAction SilentlyContinue
 Copy-Item -Path $items_to_release -Destination ./temp_dir
-Get-ChildItem ./temp_dir -Recurse | Compress-Archive -DestinationPath ./release.zip
+Get-ChildItem ./temp_dir -Recurse | Compress-Archive -DestinationPath ./release.zip -Force
 Remove-Item ./temp_dir -Recurse -Force
 
 # Push that mofo to origin
