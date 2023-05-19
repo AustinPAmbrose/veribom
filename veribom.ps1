@@ -41,6 +41,8 @@
 
 #> 
 
+param([Switch]$no_update = $false)
+
 $veribom_loc = $MyInvocation.MyCommand.Path
 $veribom_dir = Split-Path $veribom_loc -Parent
 $veribom_ver = (Test-ScriptFileInfo $veribom_loc).Version
@@ -86,7 +88,7 @@ function check_for_updates {
                 Remove-Item $veribom_dir -Force -Recurse
                 Move-Item "$home\downloads\veribom_temp" -Destination $veribom_dir
                 Write-Host "Update Complete!"
-                powershell $veribom_loc
+                powershell $veribom_loc -no_update
                 while($true) {}
             }
         }
@@ -98,6 +100,7 @@ function check_for_updates {
         [console]::CursorVisible = $true
         Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue -Recurse
         Remove-Item "$home\downloads\veribom_temp" -ErrorAction SilentlyContinue -Recurse
+        Clear-Host
     }
 }
 
@@ -267,8 +270,10 @@ function new_comparison () {
 ############## The main script starts here
 
 Clear-Host
+if ($no_update -eq $false){
 check_for_updates
-Clear-Host
+}
+
 
 # Main Loop
 :main while ($true) {
