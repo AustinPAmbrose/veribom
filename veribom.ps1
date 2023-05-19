@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 0.1.19
+.VERSION 0.1.20
 
 .GUID 1eb7878d-24c4-4677-87b7-478a7502bd37
 
@@ -29,6 +29,8 @@
 
 
 #> 
+
+
 
 
 
@@ -81,7 +83,8 @@ function check_for_updates {
             Write-Host "version $veribom_ver -> $new_version"
             $choice = Read-Host  "would you like to update? (y/n)"
             if ($choice -eq "y") {
-                Move-Item "$home\downloads\veribom_temp" -Destination $veribom_dir -Force
+                Remove-Item $veribom_dir -Force -Recurse
+                Move-Item "$home\downloads\veribom_temp" -Destination $veribom_dir
                 Write-Host "Update Complete!"
                 powershell $veribom_loc
                 while($true) {}
