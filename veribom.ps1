@@ -324,7 +324,7 @@ check_for_updates
 # Main Loop
 :main while ($true) {
     [Console]::ResetColor()
-    Write-Host ("veribom-" + $veribom_ver.Major + "." + $veribom_ver.Minor + ": ") -NoNewline
+    Write-Host ("vb-" + $veribom_ver.Major + "." + $veribom_ver.Minor + ": ") -NoNewline
     [Console]::ForegroundColor = "Yellow"
     $command = Read-Host
     [Console]::ResetColor()
