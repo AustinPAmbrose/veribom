@@ -44,7 +44,7 @@ $veribom_ver = (Test-ScriptFileInfo $veribom_loc).Version
 $normal_number  = "(\d{5,8}\.?\w?(-?\d{0,2})?)"
 $us_number      = "(US\d{4})"
 $kit_number     = "(KIT ?#\d{1,4})"
-$part_number    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)?)?" + "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")" + "\n? ?(\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)?"
+$part_number    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)?)? ?" + "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")" + "\n? ?(\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)?"
 #                 not a ref#           leading quantity                             the main part number                               trailing quantity, maybe on the next line
 
 function check_for_updates {
