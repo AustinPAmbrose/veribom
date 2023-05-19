@@ -81,7 +81,9 @@ function check_for_updates {
                 Remove-Item "$home\downloads\veribom_temp" -Recurse -Force -ErrorAction SilentlyContinue
                 Expand-Archive "$home\downloads\veribom_temp.zip" -DestinationPath "$home\downloads\veribom_temp" -Force
                 Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue
-                return (Test-ScriptFileInfo "$home\downloads\veribom_temp\veribom.ps1").Version
+                $next_version = (Test-ScriptFileInfo "$home\downloads\veribom_temp\veribom.ps1").Version
+                Remove-Item "$home\downloads\veribom_temp" -Recurse -Force -ErrorAction SilentlyContinue
+                return $next_version
             } catch {
                 throw $_
             }
