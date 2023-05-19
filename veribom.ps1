@@ -332,7 +332,7 @@ check_for_updates
         "help"    {Start-Process "https://github.com/AustinPAmbrose/veribom"}
         "clear"   {Clear-Host; continue main}
         "version" {"$veribom_ver"}
-        "update"  {check_for_updates}
+        "update"  {check_for_updates; continue main}
         ""        {continue main}
         default {
             [Console]::ForegroundColor = "Red"
