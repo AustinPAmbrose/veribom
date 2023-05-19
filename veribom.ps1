@@ -293,7 +293,7 @@ check_for_updates
         ""      {continue main}
         default {
             [Console]::ForegroundColor = "Red"
-            "    unknown command: $switch"
+            "    unknown command: $_"
             [Console]::ResetColor()
         }
     }
