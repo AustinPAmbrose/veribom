@@ -13,9 +13,9 @@ if ((Invoke-ScriptAnalyzer ./veribom.ps1).Severity -join "" -match "Error") {
 # Check that everything is committed and pushed
 $null = git fetch --quiet
 $status = git status
-if ((-not $status.contains("On branch main")) -or `
-   ($status.contains("Changes not staged for commit")) -or `
-   ($status.contains("Your branch is behind 'origin/main'"))) {
+if ((-not ($status -match "On branch main")) -or `
+   ($status -match "Changes not staged for commit") -or `
+   ($status -match "Your branch is behind 'origin/main'")) {
     throw "git error... pull, commit, push, and try again"
     return
 }

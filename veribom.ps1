@@ -44,8 +44,6 @@
 
 
 
-
-
 <# 
 
 .DESCRIPTION 
@@ -72,8 +70,8 @@ function check_for_updates {
             try {
                 $ProgressPreference = "SilentlyContinue"
                 Invoke-WebRequest "https://github.com/AustinPAmbrose/veribom/raw/main/release.zip" -OutFile "$home\downloads\veribom_temp.zip"
+                Remove-Item "$home\downloads\veribom_temp" -Recurse -Force
                 Expand-Archive "$home\downloads\veribom_temp.zip" -DestinationPath "$home\downloads\veribom_temp" -Force
-                Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue
                 Remove-Item "$home\downloads\veribom_temp.zip"
                 return (Test-ScriptFileInfo "$home\downloads\veribom_temp\veribom.ps1").Version
             } catch {
@@ -301,7 +299,8 @@ check_for_updates
         "help"    {Start-Process "https://github.com/AustinPAmbrose/veribom"}
         "clear"   {Clear-Host; continue main}
         "version" {"$veribom_ver"}
-        ""      {continue main}
+        "update"  {check_for_updates}
+        ""        {continue main}
         default {
             [Console]::ForegroundColor = "Red"
             "    unknown command: $_"
