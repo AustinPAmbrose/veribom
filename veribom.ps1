@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 0.1.25
+.VERSION 0.1.26
 
 .GUID 1eb7878d-24c4-4677-87b7-478a7502bd37
 
@@ -44,6 +44,8 @@
 
 
 
+
+
 <# 
 
 .DESCRIPTION 
@@ -71,6 +73,7 @@ function check_for_updates {
                 $ProgressPreference = "SilentlyContinue"
                 Invoke-WebRequest "https://github.com/AustinPAmbrose/veribom/raw/main/release.zip" -OutFile "$home\downloads\veribom_temp.zip"
                 Expand-Archive "$home\downloads\veribom_temp.zip" -DestinationPath "$home\downloads\veribom_temp" -Force
+                Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue
                 Remove-Item "$home\downloads\veribom_temp.zip"
                 return (Test-ScriptFileInfo "$home\downloads\veribom_temp\veribom.ps1").Version
             } catch {
@@ -108,7 +111,7 @@ function check_for_updates {
         Start-Sleep -Seconds 1
     } finally {
         [console]::CursorVisible = $true
-        Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue -Recurse
+        Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue
         Remove-Item "$home\downloads\veribom_temp" -ErrorAction SilentlyContinue -Recurse
         Clear-Host
     }
