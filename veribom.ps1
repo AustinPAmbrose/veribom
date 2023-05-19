@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 0.0.16
+.VERSION 0.1.17
 
 .GUID 1eb7878d-24c4-4677-87b7-478a7502bd37
 
@@ -66,6 +66,8 @@
 
 
 
+
+
 <# 
 
 .DESCRIPTION 
@@ -73,14 +75,64 @@
 
 #> 
 
-
-$veribom_dir = Split-Path $MyInvocation.MyCommand.Path
+$veribom_loc = $MyInvocation.MyCommand.Path
+$veribom_dir = Split-Path $veribom_loc -Parent
+$veribom_ver = (Test-ScriptFileInfo $veribom_loc).Version
 
 $normal_number  = "(\d{5,8}\.?\w?(-?\d{0,2})?)"
 $us_number      = "(US\d{4})"
 $kit_number     = "(KIT ?#\d{1,4})"
 $part_number    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)?)?" + "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")" + "\n? ?(\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)?"
 #                 not a ref#           leading quantity                             the main part number                               trailing quantity, maybe on the next line
+
+function check_for_updates {
+    try {
+        [console]::CursorVisible = $false
+        $download = Start-Job -ScriptBlock {
+            try {
+                $ProgressPreference = "SilentlyContinue"
+                Invoke-WebRequest "https://github.com/AustinPAmbrose/veribom/raw/main/release.zip" -OutFile "$home\downloads\veribom_temp.zip"
+                Expand-Archive "$home\downloads\veribom_temp.zip" -DestinationPath "$home\downloads\veribom_temp" -Force
+                Remove-Item "$home\downloads\veribom_temp.zip"
+                return (Test-ScriptFileInfo "$home\downloads\veribom_temp\veribom.ps1").Version
+            } catch {
+                throw $_
+            }
+        }
+        while ($download.State -eq "NotStarted") {}
+        while ($download.State -eq "Running") {
+            Write-Host "`rchecking for updates   " -NoNewline; Start-Sleep -Milliseconds 200
+            Write-Host "`rchecking for updates.  " -NoNewline; Start-Sleep -Milliseconds 200
+            Write-Host "`rchecking for updates.. " -NoNewline; Start-Sleep -Milliseconds 200
+            Write-Host "`rchecking for updates..." -NoNewline; Start-Sleep -Milliseconds 200
+        }
+        $null = Wait-Job $download
+        if ($download.State -eq "Failed") {throw $download.JobStateInfo.Reason.Message}
+        $new_version = Receive-Job $download
+        Remove-Job $download
+
+        if ($new_version -gt $veribom_ver) {
+            [console]::CursorVisible = $true
+            Write-Host "new update available!"
+            Write-Host "version $veribom_ver -> $new_version"
+            $choice = Read-Host  "would you like to update? (y/n)"
+            if ($choice -eq "y") {
+                Move-Item "$home\downloads\veribom_temp" -Destination $veribom_dir -Force
+                Write-Host "Update Complete!"
+                powershell $veribom_loc
+                while($true) {}
+            }
+        }
+    } catch {
+        Write-Host "failed to check for updates"
+        Write-Host "$_"
+        Start-Sleep -Seconds 1
+    } finally {
+        [console]::CursorVisible = $true
+        Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue -Recurse
+        Remove-Item "$home\downloads\veribom_temp" -ErrorAction SilentlyContinue -Recurse
+    }
+}
 
 function pdf_to_text($pdf_path) {
     # Dont forget to unblock this guy during install
@@ -120,11 +172,13 @@ function pdftext_to_bom($text) {
     return $bom
 }
 
-function get_file($title) {
+function get_file($title, $starting_dir, $filter) {
     # Get a file from the user
     Add-Type -AssemblyName System.Windows.Forms
     $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{ InitialDirectory = [Environment]::GetFolderPath('Desktop') }
-    $FileBrowser.Title = $title
+    $FileBrowser.Title            = $title
+    $FileBrowser.InitialDirectory = $starting_dir
+    $FileBrowser.Filter           = $filter
     $null = $FileBrowser.ShowDialog()
     return $FileBrowser.FileName
 }
@@ -221,23 +275,53 @@ function combine_boms($excel_bom, $pdf_bom) {
     return $bom 
 }
 
+$starting_directory = "$home"
+function new_comparison () {
+    Write-Host "    select a bom:     " -NoNewline 
+    $xls_file = get_file -title "Select an Excel BoM" -starting_dir $starting_directory -filter "BoM (*.xlsx) |*.xlsx"
+    Split-Path $xls_file -Leaf
+    if ($xls_file -eq "") {return}
+    $starting_directory = Split-Path $xls_file
+    #$xls_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.xlsx"
 
-# MAIN SCRIPT STARTS HERE
+    Write-Host "    select a drawing: " -NoNewline
+    $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
+    Split-Path $pdf_file -Leaf
+    if ($pdf_file -eq "") {return}
+    $starting_directory = Split-Path $pdf_file
+    #$pdf_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.PDF"
+
+    $pdf_bom = pdf_to_bom $pdf_file
+    $xls_bom = excel_to_bom $xls_file
+
+    combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom 
+}
+
+############## The main script starts here
+
+Clear-Host
+check_for_updates
 Clear-Host
 
-# Write-Host "select an excel bom..." -NoNewline
-# $xls_file = get_file -title "Select an Excel BoM"
-# if ($xls_file -eq "") {return}
-# Write-Host "done"
-$xls_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.xlsx"
+# Main Loop
+:main while ($true) {
+    [Console]::ResetColor()
+    Write-Host ("veribom-" + $veribom_ver.Major + "." + $veribom_ver.Minor + ": ") -NoNewline
+    [Console]::ForegroundColor = "Yellow"
+    $command = Read-Host
+    [Console]::ResetColor()
 
-# Write-Host "select a pdf drawing..." -NoNewline
-# $pdf_file = get_file -title "Select a PDF BoM"
-# if ($pdf_file -eq "") {return}
-# Write-Host "done"
-$pdf_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.PDF"
+    switch ($command) {
+        "new"   {new_comparison}
+        "help"  {Start-Process "https://github.com/AustinPAmbrose/veribom"}
+        "clear" {Clear-Host; continue main}
+        ""      {continue main}
+        default {
+            [Console]::ForegroundColor = "Red"
+            "    unknown command: $switch"
+            [Console]::ResetColor()
+        }
+    }
 
-$pdf_bom = pdf_to_bom $pdf_file
-$xls_bom = excel_to_bom $xls_file
-
-combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom 
+    ""
+}

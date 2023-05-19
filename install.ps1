@@ -1,7 +1,7 @@
 # Make sure their powershell version is at least 5.1
-if ($PSVersionTable.PSVersion -lt [version]::new("5.2")) {
+if ($PSVersionTable.PSVersion -lt [version]::new("5.1")) {
     Write-Warning "this script was written for powershell version 5.1,"
-    Write-Warning "but your current powershell version is " + $PSVersionTable.PSVersion
+    Write-Warning ("but your current powershell version is " + $PSVersionTable.PSVersion)
     Write-Warning "see this link for instructions on updating your powershell:"
     "https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.3"
     return
@@ -39,10 +39,30 @@ if ($policy_problem) {
 }
 
 # Now for the actual downloading
+Clear-Host
+[console]::CursorVisible = $false
+$ProgressPreference = "SilentlyContinue"
 Write-Host "veribom will be installed to --> $home\.veribom"
 Write-Host "downloading..." -NoNewline
 Invoke-WebRequest "https://github.com/AustinPAmbrose/veribom/raw/main/release.zip" -OutFile "$home\downloads\release.zip"
 Write-Host "done!"
 Write-Host "installing..." -NoNewline
-New-Item "$home\.veribom" -ItemType Directory -ErrorAction SilentlyContinue
 Expand-Archive "$home\downloads\release.zip" -DestinationPath "$home\.veribom" -Force
+Remove-Item "$home\downloads\release.zip"
+Write-Host "done!"
+
+Write-Host "creating desktop shortcut..." -NoNewline
+$WshShell = New-Object -comObject WScript.Shell
+$shortcut = $WshShell.CreateShortcut("$Home\Desktop\veribom.lnk")
+$shortcut.TargetPath = "powershell.exe"
+$shortcut.Arguments  = "`"$home\.veribom\veribom.ps1`""
+$shortcut.Hotkey     = "CTRL+ALT+A"
+$shortcut.Save()
+Write-Host "done!"
+
+""
+"veribom installed successfully!"
+"you may now close this window"
+""
+"use `'CTRL + ALT + A`' to launch veribom..."
+while ($true) {}
