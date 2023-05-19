@@ -272,20 +272,20 @@ function combine_boms($excel_bom, $pdf_bom) {
     return $bom 
 }
 
-$starting_directory = "$home"
+$global:starting_directory = "$home"
 function new_comparison () {
     Write-Host "    select a bom:     " -NoNewline 
     $xls_file = get_file -title "Select an Excel BoM" -starting_dir $starting_directory -filter "BoM (*.xlsx) |*.xlsx"
+    if ($xls_file -eq "") {""; return}
     Split-Path $xls_file -Leaf
-    if ($xls_file -eq "") {return}
-    $starting_directory = Split-Path $xls_file
+    $global:starting_directory = Split-Path $xls_file -Parent
     #$xls_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.xlsx"
 
     Write-Host "    select a drawing: " -NoNewline
     $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
+    if ($pdf_file -eq "") {""; return}
     Split-Path $pdf_file -Leaf
-    if ($pdf_file -eq "") {return}
-    $starting_directory = Split-Path $pdf_file
+    $global:starting_directory = Split-Path $pdf_file -Parent
     #$pdf_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.PDF"
 
     $pdf_bom = pdf_to_bom $pdf_file
