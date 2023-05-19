@@ -115,8 +115,8 @@ function check_for_updates {
             Write-Host "version $veribom_ver -> $new_version"
             $choice = Read-Host  "would you like to update? (y/n)"
             if ($choice -eq "y") {
-                Remove-Item $veribom_dir -Force -Recurse
-                Move-Item "$home\downloads\veribom_temp" -Destination $veribom_dir
+                Get-ChildItem $veribom_dir | Remove-Item -Recurse -ErrorAction SilentlyContinue
+                Get-ChildItem "$home\downloads\veribom_temp" | Move-Item -Destination $veribom_dir
                 Write-Host "Update Complete!"
                 powershell $veribom_loc -no_update
                 while($true) {}
@@ -196,7 +196,6 @@ function excel_to_csv($xls_path, $csv_path) {
 function csv_to_bom ($csv_path) {
     # Returns a table of parts 
     $csv = Import-Csv $csv_path -Header "part_number", "description", "uom", "quantity"
-    $csv = $csv | Select-Object -Property * -ExcludeProperty description,uom
     $csv = $csv[3..($csv.length -1)]           # remove the header
     $bom = $csv.where({$_.part_number -ne ""}) # remove empty elements
     return $bom 
@@ -218,7 +217,7 @@ function combine_boms($excel_bom, $pdf_bom) {
     $bom = @()
     # Add the excel parts to the bom
     foreach ($i in 0..($excel_bom.length-1)) {
-        $bom += [pscustomobject]@{part_number=$excel_bom.part_number[$i];xls=[double]$excel_bom.quantity[$i];pdf=" "}
+        $bom += [pscustomobject]@{part_number=$excel_bom.part_number[$i];description=$excel_bom.description[$i];xls=[double]$excel_bom.quantity[$i];pdf=$null}
     }
     #Add the pdf parts to the bom
     foreach ($pdf_part_number in $pdf_bom.part_number) {
@@ -228,7 +227,7 @@ function combine_boms($excel_bom, $pdf_bom) {
             $bom[$loc].pdf = $pdf_quantity
         }
         else {
-            $bom += [pscustomobject]@{part_number=$pdf_part_number;xls=" ";pdf=[double]$pdf_quantity}
+            $bom += [pscustomobject]@{part_number=$pdf_part_number;description="";xls=" ";pdf=[double]$pdf_quantity}
         }
     }
     $bom = $bom | Sort-Object part_number
@@ -270,6 +269,19 @@ function combine_boms($excel_bom, $pdf_bom) {
                 }
                 $e = [char]27                    
                 "$e[${color}m$($_.pdf)${e}[0m"
+            }
+        }, `
+        @{
+            Name='Description'
+            Align="left"
+            Expression={
+                if ($_.pdf -eq $_.xls) {
+                    $color = "0"
+                } else {
+                    $color = "31"
+                }
+                $e = [char]27                    
+                "$e[${color}m$($_.description)${e}[0m"
             }
         }
     return $bom 
