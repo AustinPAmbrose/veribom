@@ -1,3 +1,5 @@
+0.2.41
+added a sexy changelog history when updating
 0.1.40
 updated veribom to incorporate changelog in update notes
 0.1.39
