@@ -217,6 +217,7 @@ function excel_to_bom($excel_path) {
     $csv_path = "$veribom_dir\temp.csv"
     excel_to_csv -xls_path $xls_file -csv_path $csv_path
     $bom = csv_to_bom -csv_path $csv_path
+    Remove-Item "$veribom_dir\temp.csv" -ErrorAction SilentlyContinue
     return $bom
 }
 function combine_boms($excel_bom, $pdf_bom) {
