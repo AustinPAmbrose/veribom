@@ -120,7 +120,22 @@ function check_for_updates {
         if ($new_version -gt $veribom_ver) {
             [console]::CursorVisible = $true
             Write-Host "new update available!"
-            Write-Host "version $veribom_ver -> $new_version"
+            Write-Host "version" -NoNewline
+            Write-Host $veribom_ver.ToString() -ForegroundColor "Yellow" -NoNewline
+            Write-Host " -> " -NoNewline
+            Write-Host $new_version.ToString() -ForegroundColor "Yellow"
+            Write-Host "ChangeLog:"
+            $ProgressPreference = "SilentlyContinue"
+            $changelog = Invoke-WebRequest "https://raw.githubusercontent.com/AustinPAmbrose/veribom/main/CHANGELOG.md"
+            foreach ($note in ($changelog.Content -split "`n")) {
+                if ($note -match "\d+.\d+.\d+") {
+                    Write-Host $note -ForegroundColor "Yellow"
+                } else {
+                    Write-Host "   -$note"
+                }
+
+            }
+            Write-Host ""
             $choice = Read-Host  "would you like to update? (y/n)"
             if ($choice -eq "y") {
                 Get-ChildItem $veribom_dir | Remove-Item -Recurse -ErrorAction SilentlyContinue

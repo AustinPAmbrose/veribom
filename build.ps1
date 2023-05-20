@@ -50,8 +50,8 @@ Get-ChildItem ./temp_dir -Recurse | Compress-Archive -DestinationPath ./release.
 Remove-Item ./temp_dir -Recurse -Force
 
 # Update the changelog
-$next_version.ToString() | Out-File ./CHANGELOG.md
-git log --pretty="%s" | Out-File -Append ./CHANGELOG.md
+$next_version.ToString() | Out-File ./CHANGELOG.md -Encoding ASCII
+git log --pretty="%s" | Out-File -Append ./CHANGELOG.md -Encoding ASCII
 
 # Push that mofo to origin
 git commit -am $next_version.ToString() --quiet
