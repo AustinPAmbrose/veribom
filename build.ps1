@@ -49,8 +49,11 @@ Copy-Item -Path $items_to_release -Destination ./temp_dir
 Get-ChildItem ./temp_dir -Recurse | Compress-Archive -DestinationPath ./release.zip -Force
 Remove-Item ./temp_dir -Recurse -Force
 
+# Update the changelog
+$next_version.ToString() | Out-File ./CHANGELOG.md
+git log --pretty="%s" | Out-File -Append ./CHANGELOG.md
+
 # Push that mofo to origin
-git add "./release.zip"
 git commit -am $next_version.ToString() --quiet
 git push --quiet
 ""
