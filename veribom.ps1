@@ -112,7 +112,7 @@ function check_for_updates {
             if ($choice -eq "y") {
                 Get-ChildItem $veribom_dir | Remove-Item -Recurse -ErrorAction SilentlyContinue
                 Get-ChildItem "$home\downloads\veribom_temp" | Move-Item -Destination $veribom_dir
-                Write-Host "update vomplete!"
+                Write-Host "update complete!"
                 powershell $veribom_loc -no_update
                 while($true) {}
             }
