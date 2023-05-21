@@ -1,3 +1,6 @@
+0.2.42
+updated the build script to take keystrokes as input
+updated veribom to take keystrokes as imputs
 0.2.41
 added a sexy changelog history when updating
 0.1.40
