@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 0.3.44
+.VERSION 0.3.43
 
 .GUID 1eb7878d-24c4-4677-87b7-478a7502bd37
 
@@ -103,7 +103,7 @@ function check_for_updates {
                 }
             }
             Write-Host ""
-            Write-Host"would you like to update? (y/n)"
+            Write-Host "would you like to update? (y/n)"
             $choice = [Console]::ReadKey("No Echo").KeyChar
             if ($choice -eq "y") {
                 Get-ChildItem $veribom_dir | Remove-Item -Recurse -ErrorAction SilentlyContinue
