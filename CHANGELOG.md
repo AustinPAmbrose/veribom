@@ -1,3 +1,6 @@
+0.4.46
+added a 'full' option. default veribom only returns errors now
+fixed a typo in the updater
 0.3.45
 0.3.44
 fixed a bug with the updater
