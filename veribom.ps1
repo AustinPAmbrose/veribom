@@ -53,6 +53,7 @@ $veribom_loc = $MyInvocation.MyCommand.Path
 $veribom_dir = Split-Path $veribom_loc -Parent
 $veribom_ver = (Test-ScriptFileInfo $veribom_loc).Version
 
+$ignored_number = "(BEGA)|(NOTE)|(ASM)|((\b4)(?!(2885)|(2886)))"
 $normal_number  = "(\d{5,8}\.?\w?(-?\d{0,2})?)"
 $us_number      = "(US\d{4})"
 $kit_number     = "(KIT ?#\d{1,4})"
@@ -190,8 +191,8 @@ function excel_to_csv($xls_path, $csv_path) {
 function csv_to_bom ($csv_path) {
     # Returns a table of parts 
     $csv = Import-Csv $csv_path -Header "part_number", "description", "uom", "quantity"
-    $csv = $csv[3..($csv.length -1)]           # remove the header
-    $bom = $csv.where({$_.part_number -ne ""}) # remove empty elements
+    $csv = $csv.where({$_.part_number -ne ""})      # remove empty elements (including leading elements)
+    $bom = $csv[3..($csv.part_number.length -1)]    # remove the header
     return $bom 
 }
 
@@ -208,7 +209,36 @@ function excel_to_bom($excel_path) {
     Remove-Item "$veribom_dir\temp.csv" -ErrorAction SilentlyContinue
     return $bom
 }
-function combine_boms($excel_bom, $pdf_bom) {
+
+function red($string) {
+    $e = [char]27
+    $color = 31
+    "$e[${color}m$($string)${e}[0m"
+}
+function yellow($string) {
+    $e = [char]27
+    $color = 33
+    "$e[${color}m$($string)${e}[0m"
+}
+function format_row ($row, $val) {
+    if (($row.pdf -eq $row.xls)) {
+        $val
+    } elseif (($row.part_number -match $ignored_number)) {
+        yellow $val
+    } else {
+        red $val
+    }
+}
+
+function combine_boms {
+
+    param(
+        $excel_bom,
+        $pdf_bom,
+        [boolean] $full = $false
+    )
+
+
     $bom = @()
     # Add the excel parts to the bom
     foreach ($i in 0..($excel_bom.length-1)) {
@@ -225,65 +255,42 @@ function combine_boms($excel_bom, $pdf_bom) {
             $bom += [pscustomobject]@{part_number=$pdf_part_number;description="";xls=" ";pdf=[double]$pdf_quantity}
         }
     }
+
+    if (-not $full) {
+        $bom = $bom.where({-not (($_ -match $ignored_number) -or ($_.pdf -eq $_.xls))})
+    }
     $bom = $bom | Sort-Object part_number
     $bom = $bom | Format-Table `
         @{
             Name='Part Number'
             Align="left"
-            Expression={
-                if ($_.pdf -eq $_.xls) {
-                    $color = "0"
-                } else {
-                    $color = "31"
-                }
-                $e = [char]27                    
-                "$e[${color}m$($_.part_number)${e}[0m"
-            }
+            Expression={format_row $_ $_.part_number}
         }, `
         @{
             Name='XLS'
             Align="right"
-            Expression={
-                if ($_.pdf -eq $_.xls) {
-                    $color = "0"
-                } else {
-                    $color = "31"
-                }
-                $e = [char]27                    
-                "$e[${color}m$($_.xls)${e}[0m"
-            }
+            Expression={format_row $_ $_.xls}
         }, `
         @{
             Name='PDF'
             Align="left"
-            Expression={
-                if ($_.pdf -eq $_.xls) {
-                    $color = "0"
-                } else {
-                    $color = "31"
-                }
-                $e = [char]27                    
-                "$e[${color}m$($_.pdf)${e}[0m"
-            }
+            Expression={format_row $_ $_.pdf}
         }, `
         @{
             Name='Description'
             Align="left"
-            Expression={
-                if ($_.pdf -eq $_.xls) {
-                    $color = "0"
-                } else {
-                    $color = "31"
-                }
-                $e = [char]27                    
-                "$e[${color}m$($_.description)${e}[0m"
-            }
+            Expression={format_row $_ $_.description}
         }
-    return $bom 
+    return $bom
 }
 
 $global:starting_directory = "$home"
 function new_comparison () {
+
+    param(
+        [switch] $full = $false
+    )
+
     Clear-Host
     Write-Host "select a bom:     " -NoNewline 
     $xls_file = get_file -title "Select an Excel BoM" -starting_dir $starting_directory -filter "BoM (*.xlsx) |*.xlsx"
@@ -302,7 +309,8 @@ function new_comparison () {
     $pdf_bom = pdf_to_bom $pdf_file
     $xls_bom = excel_to_bom $xls_file
 
-    combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom 
+    combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom -full $full
+
 }
 
 ############## The main script starts here
@@ -316,6 +324,7 @@ check_for_updates
 :main while ($true) {
     Write-Host ("---------    veribom " + $veribom_ver.Major + "." + $veribom_ver.Minor + "     ---------")
     Write-Host "n" -ForegroundColor "Yellow" -NoNewline; ")  new/next veribom"
+    Write-Host "f" -ForegroundColor "Yellow" -NoNewline; ")  full veribom, including warnings"
     Write-Host "h" -ForegroundColor "Yellow" -NoNewline; ")  help, open the veribom project page"
     Write-Host "v" -ForegroundColor "Yellow" -NoNewline; ")  version of veribom"
     Write-Host "u" -ForegroundColor "Yellow" -NoNewline; ")  update/ check for updates"
@@ -326,6 +335,7 @@ check_for_updates
         $command = [Console]::ReadKey("No Echo").KeyChar
         switch ($command) {
             "n"     {new_comparison}
+            "f"     {new_comparison -full}
             "h"     {Start-Process "https://github.com/AustinPAmbrose/veribom"}
             "v"     {"";"$veribom_ver"}
             "u"     {"";check_for_updates}
