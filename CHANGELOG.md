@@ -1,3 +1,4 @@
+0.3.44
 0.3.43
 0.2.42
 updated the build script to take keystrokes as input
