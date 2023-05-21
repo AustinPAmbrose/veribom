@@ -31,7 +31,7 @@ $next_build = [version]::New($v.Major  ,$v.Minor   ,$v.Build+1)
 "    1) Major Version - " + $next_major
 "    2) Minor Version - " + $next_minor
 "    3) Build Version - " + $next_build
-switch (Read-Host) {
+switch ([Console]::ReadKey("No Echo").KeyChar) {
     "1" {$next_version = $next_major}
     "2" {$next_version = $next_minor}
     "3" {$next_version = $next_build}
