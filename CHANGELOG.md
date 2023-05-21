@@ -1,3 +1,4 @@
+0.3.45
 0.3.44
 fixed a bug with the updater
 0.3.44
