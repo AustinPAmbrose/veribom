@@ -30,48 +30,6 @@
 
 #> 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <# 
 
 .DESCRIPTION 
@@ -126,6 +84,7 @@ function check_for_updates {
             Write-Host $veribom_ver.ToString() -ForegroundColor "Yellow" -NoNewline
             Write-Host " -> " -NoNewline
             Write-Host $new_version.ToString() -ForegroundColor "Yellow"
+            Write-Host ""
             Write-Host "ChangeLog:"
             $ProgressPreference = "SilentlyContinue"
             $changelog = Invoke-WebRequest "https://github.com/AustinPAmbrose/veribom/raw/main/CHANGELOG.md"
@@ -138,11 +97,12 @@ function check_for_updates {
                 }
             }
             Write-Host ""
-            $choice = Read-Host  "would you like to update? (y/n)"
+            Write-Host"would you like to update? (y/n)"
+            $choice = [Console]::ReadKey("No Echo").KeyChar
             if ($choice -eq "y") {
                 Get-ChildItem $veribom_dir | Remove-Item -Recurse -ErrorAction SilentlyContinue
                 Get-ChildItem "$home\downloads\veribom_temp" | Move-Item -Destination $veribom_dir
-                Write-Host "Update Complete!"
+                Write-Host "update vomplete!"
                 powershell $veribom_loc -no_update
                 while($true) {}
             }
@@ -152,7 +112,6 @@ function check_for_updates {
         Write-Host "$_"
         Start-Sleep -Seconds 1
     } finally {
-        [console]::CursorVisible = $true
         Remove-Item "$home\downloads\veribom_temp.zip" -ErrorAction SilentlyContinue
         Remove-Item "$home\downloads\veribom_temp" -ErrorAction SilentlyContinue -Recurse
         Clear-Host
@@ -315,14 +274,15 @@ function combine_boms($excel_bom, $pdf_bom) {
 
 $global:starting_directory = "$home"
 function new_comparison () {
-    Write-Host "    select a bom:     " -NoNewline 
+    Clear-Host
+    Write-Host "select a bom:     " -NoNewline 
     $xls_file = get_file -title "Select an Excel BoM" -starting_dir $starting_directory -filter "BoM (*.xlsx) |*.xlsx"
     if ($xls_file -eq "") {""; return}
     Split-Path $xls_file -Leaf
     $global:starting_directory = Split-Path $xls_file -Parent
     #$xls_file = "C:\Users\apambrose\Documents\My_Drive\Projects\Powershell_Projects\veribom\more_test_data\B24058_D.xlsx"
 
-    Write-Host "    select a drawing: " -NoNewline
+    Write-Host "select a drawing: " -NoNewline
     $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
     if ($pdf_file -eq "") {""; return}
     Split-Path $pdf_file -Leaf
@@ -336,34 +296,36 @@ function new_comparison () {
 }
 
 ############## The main script starts here
-
+[Console]::CursorVisible = $false
 Clear-Host
 if ($no_update -eq $false){
 check_for_updates
 }
 
-
 # Main Loop
 :main while ($true) {
-    [Console]::ResetColor()
-    Write-Host ("vb-" + $veribom_ver.Major + "." + $veribom_ver.Minor + ": ") -NoNewline
-    [Console]::ForegroundColor = "Yellow"
-    $command = Read-Host
-    [Console]::ResetColor()
+    Write-Host ("---------    veribom " + $veribom_ver.Major + "." + $veribom_ver.Minor + "     ---------")
+    Write-Host "n" -ForegroundColor "Yellow" -NoNewline; ")  new/next veribom"
+    Write-Host "h" -ForegroundColor "Yellow" -NoNewline; ")  help, open the veribom project page"
+    Write-Host "v" -ForegroundColor "Yellow" -NoNewline; ")  version of veribom"
+    Write-Host "u" -ForegroundColor "Yellow" -NoNewline; ")  update/ check for updates"
+    Write-Host "x" -ForegroundColor "Yellow" -NoNewline; ")  exit the veribom program"
 
-    switch ($command) {
-        "new"     {new_comparison}
-        "help"    {Start-Process "https://github.com/AustinPAmbrose/veribom"}
-        "clear"   {Clear-Host; continue main}
-        "version" {"$veribom_ver"}
-        "update"  {check_for_updates; continue main}
-        ""        {continue main}
-        default {
-            [Console]::ForegroundColor = "Red"
-            "    unknown command: $_"
-            [Console]::ResetColor()
+    # Keep looping until we get one of the available commands
+    :valid_command while($true) {
+        $command = [Console]::ReadKey("No Echo").KeyChar
+        switch ($command) {
+            "n"     {new_comparison}
+            "h"     {Start-Process "https://github.com/AustinPAmbrose/veribom"}
+            "v"     {"";"$veribom_ver"}
+            "u"     {"";check_for_updates}
+            "x"     {return}
+            default {continue valid_command}
         }
+        break
     }
-
-    ""
+        ""
+        "press q to return to the main menu..."
+        while([Console]::ReadKey("No Echo").KeyChar -ne "q"){}
+        Clear-Host
 }

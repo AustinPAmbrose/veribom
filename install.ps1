@@ -21,7 +21,8 @@ if ($policy_problem) {
     Write-Warning "you may not be able to run scripts with your current script execution policy"
     Write-Warning "please review the following microsoft documentation on execution policies:"
     "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7.3"
-    $do_update_policy = Read-Host "Would you like to update your execution policy to RemoteSigned? (y/n)"
+    Write-Host "Would you like to update your execution policy to RemoteSigned? (y/n)"
+    $do_update_policy = [Console]::ReadKey("No Echo").KeyChar
     if ($do_update_policy -eq "y") {
         Set-ExecutionPolicy RemoteSigned -Scope Process
         Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -55,7 +56,7 @@ Write-Host "creating desktop shortcut..." -NoNewline
 $WshShell = New-Object -comObject WScript.Shell
 $shortcut = $WshShell.CreateShortcut("$Home\Desktop\veribom.lnk")
 $shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments  = "`"$home\.veribom\veribom.ps1`""
+$shortcut.Arguments  = "$home\.veribom\veribom.ps1"
 $shortcut.Hotkey     = "CTRL+ALT+A"
 $shortcut.Save()
 Write-Host "done!"
