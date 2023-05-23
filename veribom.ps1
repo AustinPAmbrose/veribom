@@ -56,10 +56,14 @@ $veribom_dir = Split-Path $veribom_loc -Parent
 $veribom_ver = (Test-ScriptFileInfo $veribom_loc).Version
 
 $ignored_number = "(BEGA)|(NOTE)|(ASM)|((\b4)(?!(2885)|(2886)))"
+
 $normal_number  = "(\d{5,8}\.?\w?(-?\d{0,2})?)"
 $us_number      = "(US\d{4})"
 $kit_number     = "(KIT ?#\d{1,4})"
-$part_number    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)?)? ?" + "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")" + "\n? ?(\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)?"
+$any_number     = "(" + $normal_number + "|" + $us_number + "|" + $kit_number + ")"
+$leading_qty    = "(?<!\()" + "(\(?([0-9]*\.?[0-9]+)[X'`"]\)? ?)"
+$trailing_qty   = "\n?( ?\(?([0-9]*\.?[0-9]+) ?[X'`"]\)?)"
+$part_number    = "(" + $leading_qty + $any_number + ")|(" + $any_number + $trailing_qty + ")|(" + $any_number + ")"
 #                 not a ref#           leading quantity                             the main part number                               trailing quantity, maybe on the next line
 
 function check_for_updates {
@@ -144,18 +148,26 @@ function pdf_to_text($pdf_path) {
 function pdftext_to_bom($text) {
 
     # Get rid of all lines that are longer than max_line_length
-    $max_line_length = 25
+    $max_line_length = 38
     $text = $text -split "`n" 
-    $text = $text.where({$_.length -lt $max_line_length})
+    $text = $text.where({
+        ($_.length -lt $max_line_length) -and `
+        (-not($_ -match "REPLACED")) -and `
+        (-not($_ -match "REMOVED")) -and `
+        (-not($_ -match "ADDED")) -and `
+        (-not($_ -match "CHANGED"))
+    })
     $text = $text -join "`n"
 
     $bom = @()
     $callouts = $text | Select-String -Pattern $part_number -AllMatches
     foreach ($callout in $callouts.Matches) {
-        $part_number = [string] $callout.Groups[3].Value
-        $quantity_1  = [double] $callout.Groups[2].Value
-        $quantity_2  = [double] $callout.Groups[9].Value
-        $quantity = $quantity_1 + $quantity_2
+            if (($part_number = [string] $callout.Groups[4].Value))  {}
+        elseif (($part_number = [string] $callout.Groups[10].Value)) {}
+        elseif (($part_number = [string] $callout.Groups[18].Value)) {}
+            if (($quantity    = [double] $callout.Groups[3].Value))  {}
+        elseif (($quantity    = [double] $callout.Groups[16].Value)) {}
+
         if ($quantity -eq 0){ $quantity = 1 }
 
         # If the part number already exists, update the quantity
@@ -377,6 +389,7 @@ check_for_updates
     Write-Host ("---------    veribom " + $veribom_ver.Major + "." + $veribom_ver.Minor + "     ---------")
     Write-Host "n" -ForegroundColor "Yellow" -NoNewline; ")  new/next veribom"
     Write-Host "r" -ForegroundColor "Yellow" -NoNewline; ")  raw pdf, see what veribom it looking at"
+    Write-Host "e" -ForegroundColor "Yellow" -NoNewline; ")  regex used for part number matching"
     Write-Host "h" -ForegroundColor "Yellow" -NoNewline; ")  help, open the veribom project page"
     Write-Host "v" -ForegroundColor "Yellow" -NoNewline; ")  version of veribom"
     Write-Host "u" -ForegroundColor "Yellow" -NoNewline; ")  update/ check for updates"
@@ -396,6 +409,7 @@ check_for_updates
                 ""
                 pdf_to_text $pdf_file
             }
+            "e"     {"";$part_number}
             "h"     {Start-Process "https://github.com/AustinPAmbrose/veribom"}
             "v"     {"";"$veribom_ver"}
             "u"     {"";check_for_updates}
