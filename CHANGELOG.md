@@ -1,3 +1,5 @@
+0.5.50
+forgot to hide the cursor when updating :P
 0.5.49
 added a little more color to the updater prompt
 0.5.48
