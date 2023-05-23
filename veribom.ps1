@@ -385,36 +385,43 @@ if ($no_update -eq $false){
 check_for_updates
 }
 
+function convert_single_pdf {
+    Write-Host "select a drawing: " -NoNewline
+    $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
+    if ($pdf_file -eq "") {""; return}
+    Split-Path $pdf_file -Leaf
+    $global:starting_directory = Split-Path $pdf_file -Parent
+    ""
+    pdf_to_text $pdf_file
+}
+
+$show_hidden_commands = $false
 # Main Loop
 :main while ($true) {
     Clear-Host
     Write-Host ("---------    veribom " + $veribom_ver.Major + "." + $veribom_ver.Minor + "     ---------")
     Write-Host "n" -ForegroundColor "Yellow" -NoNewline; ")  new/next veribom"
-    Write-Host "r" -ForegroundColor "Yellow" -NoNewline; ")  raw pdf, see what veribom it looking at"
-    Write-Host "e" -ForegroundColor "Yellow" -NoNewline; ")  regex used for part number matching"
     Write-Host "h" -ForegroundColor "Yellow" -NoNewline; ")  help, open the veribom project page"
-    Write-Host "v" -ForegroundColor "Yellow" -NoNewline; ")  version of veribom"
     Write-Host "u" -ForegroundColor "Yellow" -NoNewline; ")  update/ check for updates"
-    Write-Host "x" -ForegroundColor "Yellow" -NoNewline; ")  exit the veribom program"
+    Write-Host "t" -ForegroundColor "Yellow" -NoNewline; ")  toggle hidden commands"
+    if ($show_hidden_commands){
+        Write-Host "r" -ForegroundColor "Yellow" -NoNewline; ")  raw pdf, see what veribom it looking at"
+        Write-Host "e" -ForegroundColor "Yellow" -NoNewline; ")  regex used for part number matching"
+        Write-Host "v" -ForegroundColor "Yellow" -NoNewline; ")  version of veribom"
+        Write-Host "x" -ForegroundColor "Yellow" -NoNewline; ")  exit the veribom program"
+    }
 
     # Keep looping until we get one of the available commands
     :valid_command while($true) {
         $command = [Console]::ReadKey("No Echo").KeyChar
         switch ($command) {
             "n"     {try{new_comparison; continue main}catch{Write-Host $_ -ForegroundColor "red"}}
-            "r"     {
-                Write-Host "select a drawing: " -NoNewline
-                $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
-                if ($pdf_file -eq "") {""; return}
-                Split-Path $pdf_file -Leaf
-                $global:starting_directory = Split-Path $pdf_file -Parent
-                ""
-                pdf_to_text $pdf_file
-            }
-            "e"     {"";$part_number}
             "h"     {Start-Process "https://github.com/AustinPAmbrose/veribom"}
-            "v"     {"";"$veribom_ver"}
             "u"     {"";check_for_updates}
+            "t"     {$show_hidden_commands = -not $show_hidden_commands; continue main}
+            "r"     {convert_single_pdf}
+            "e"     {"";$part_number}
+            "v"     {"";"$veribom_ver"}
             "x"     {return}
             default {continue valid_command}
         }
