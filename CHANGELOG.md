@@ -1,3 +1,5 @@
+0.5.49
+added a little more color to the updater prompt
 0.5.48
 cleaned up the ui by hiding the debug commands
 0.5.47
