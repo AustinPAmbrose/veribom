@@ -194,7 +194,14 @@ function csv_to_bom ($csv_path) {
     # Returns a table of parts 
     $csv = Import-Csv $csv_path -Header "part_number", "description", "uom", "quantity"
     $csv = $csv.where({$_.part_number -ne ""})      # remove empty elements (including leading elements)
-    $bom = $csv[3..($csv.part_number.length -1)]    # remove the header
+    if ($csv.part_number.IndexOf("Part Number") -ge 0) {
+        $bom = $csv[($csv.part_number.IndexOf("Part Number")+1)..($csv.part_number.length -1)] 
+    } elseif ($csv.part_number.IndexOf("Component") -ge 0) {
+        $bom = $csv[($csv.part_number.IndexOf("Component")+1)..($csv.part_number.length -1)]
+    } else {
+        throw "bom does not start with a 'part number' or 'component' column"
+    }
+       # remove the header
     return $bom 
 }
 
@@ -379,7 +386,7 @@ check_for_updates
     :valid_command while($true) {
         $command = [Console]::ReadKey("No Echo").KeyChar
         switch ($command) {
-            "n"     {new_comparison; continue main}
+            "n"     {try{new_comparison; continue main}catch{Write-Host $_ -ForegroundColor "red"}}
             "r"     {
                 Write-Host "select a drawing: " -NoNewline
                 $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
