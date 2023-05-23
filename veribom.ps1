@@ -118,7 +118,8 @@ function check_for_updates {
                 }
             }
             Write-Host ""
-            Write-Host "would you like to update? (y/n)"
+            Write-Host "would you like to update? (" -NoNewline
+            Write-Host "y" -NoNewline -ForegroundColor "Yellow"; Write-Host "/" -NoNewline; Write-Host "n" -ForegroundColor "Yellow" -NoNewline; Write-Host ")"
             $choice = [Console]::ReadKey("No Echo").KeyChar
             if ($choice -eq "y") {
                 Get-ChildItem $veribom_dir | Remove-Item -Recurse -ErrorAction SilentlyContinue
