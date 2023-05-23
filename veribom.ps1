@@ -212,34 +212,14 @@ function excel_to_bom($excel_path) {
     return $bom
 }
 
-function red($string) {
-    $e = [char]27
-    $color = 31
-    "$e[${color}m$($string)${e}[0m"
-}
-function yellow($string) {
-    $e = [char]27
-    $color = 33
-    "$e[${color}m$($string)${e}[0m"
-}
-function format_row ($row, $val) {
-    if (($row.pdf -eq $row.xls)) {
-        $val
-    } elseif (($row.part_number -match $ignored_number)) {
-        yellow $val
-    } else {
-        red $val
-    }
-}
+
 
 function combine_boms {
 
     param(
         $excel_bom,
-        $pdf_bom,
-        [boolean] $full = $false
+        $pdf_bom
     )
-
 
     $bom = @()
     # Add the excel parts to the bom
@@ -258,31 +238,54 @@ function combine_boms {
         }
     }
 
-    if (-not $full) {
-        $bom = $bom.where({-not (($_ -match $ignored_number) -or ($_.pdf -eq $_.xls))})
+    return $bom
+}
+
+function red($string) {
+    $e = [char]27
+    $color = 31
+    "$e[${color}m$($string)${e}[0m"
+}
+function yellow($string) {
+    $e = [char]27
+    $color = 33
+    "$e[${color}m$($string)${e}[0m"
+}
+function format_row ($row, $val) {
+    if (($row.pdf -eq $row.xls)) {
+        $val
+    } elseif ($row.part_number -match $ignored_number) {
+        yellow $val
+    } else {
+        red $val
     }
+}
+
+function display_bom {
+    param(
+        $bom,
+        [boolean] $display_errors   = $false,
+        [boolean] $display_warnings = $false,
+        [boolean] $display_ok       = $false
+    )
+
+    if (-not $display_errors){
+        $bom = $bom.where({($_.part_number -match $ignored_number) -or ($_.pdf -eq $_.xls)})
+    }
+    if (-not $display_warnings) {
+        $bom = $bom.where({-not ($_.part_number -match $ignored_number)})
+    }
+    if (-not $display_ok) {
+        $bom = $bom.where({($_.pdf -ne $_.xls)})
+    }
+    
     $bom = $bom | Sort-Object part_number
     $bom = $bom | Format-Table `
-        @{
-            Name='Part Number'
-            Align="left"
-            Expression={format_row $_ $_.part_number}
-        }, `
-        @{
-            Name='XLS'
-            Align="right"
-            Expression={format_row $_ $_.xls}
-        }, `
-        @{
-            Name='PDF'
-            Align="left"
-            Expression={format_row $_ $_.pdf}
-        }, `
-        @{
-            Name='Description'
-            Align="left"
-            Expression={format_row $_ $_.description}
-        }
+        @{Name='Part Number'; Align="left";  Expression={format_row $_ $_.part_number}},`
+        @{Name='XLS';         Align="right"; Expression={format_row $_ $_.xls}}, `
+        @{Name='PDF';         Align="left";  Expression={format_row $_ $_.pdf}}, `
+        @{Name='Description'; Align="left";  Expression={format_row $_ $_.description}}
+
     return $bom
 }
 
@@ -311,8 +314,47 @@ function new_comparison () {
     $pdf_bom = pdf_to_bom $pdf_file
     $xls_bom = excel_to_bom $xls_file
 
-    combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom -full $full
+    $combined_bom = combine_boms -excel_bom $xls_bom -pdf_bom $pdf_bom
 
+    $display_errors   = $true
+    $display_warnings = $false
+    $display_ok       = $false
+
+    if ($full) {
+        $display_errors   = $true
+        $display_warnings = $true
+        $display_ok       = $true
+    }
+
+    
+
+    :process_bom while($true) {
+        display_bom -bom $combined_bom -display_errors $display_errors -display_warnings $display_warnings -display_ok $display_ok
+        
+        Write-Host "use " -NoNewline
+        Write-Host "e" -ForegroundColor "yellow" -NoNewline
+        Write-Host ", " -NoNewline
+        Write-Host "w" -ForegroundColor "yellow" -NoNewline
+        Write-Host ", and " -NoNewline
+        Write-Host "r" -ForegroundColor "yellow" -NoNewline
+        Write-Host " to toggle erros, warnings, and ok parts"
+        Write-Host "press " -NoNewline
+        Write-Host "q" -ForegroundColor "Yellow" -NoNewline
+        Write-Host " to quit"
+
+        :valid_command while($true) {
+            $command = [Console]::ReadKey("No Echo").KeyChar
+            switch ($command) {
+                "e"     {$display_errors   = -not $display_errors}
+                "w"     {$display_warnings = -not $display_warnings}
+                "r"     {$display_ok       = -not $display_ok}
+                "q"     {break process_bom}
+                default {continue valid_command}
+            }
+            break
+        }
+        Clear-Host
+    }
 }
 
 ############## The main script starts here
