@@ -423,7 +423,7 @@ $show_hidden_commands = $false
         switch ($command) {
             "n"     {try{new_comparison; continue main}catch{Write-Host $_ -ForegroundColor "red"}}
             "h"     {Start-Process "https://github.com/AustinPAmbrose/veribom"}
-            "u"     {"";check_for_updates}
+            "u"     {"";check_for_updates; continue main}
             "t"     {$show_hidden_commands = -not $show_hidden_commands; continue main}
             "r"     {convert_single_pdf}
             "e"     {"";$part_number}
