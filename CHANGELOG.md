@@ -1,3 +1,5 @@
+0.5.48
+cleaned up the ui by hiding the debug commands
 0.5.47
 fixed some issues with multiple pn's on the same line
 the bom's parts list column can now be named 'Parts List' or 'Component'
