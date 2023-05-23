@@ -366,9 +366,10 @@ check_for_updates
 
 # Main Loop
 :main while ($true) {
+    Clear-Host
     Write-Host ("---------    veribom " + $veribom_ver.Major + "." + $veribom_ver.Minor + "     ---------")
     Write-Host "n" -ForegroundColor "Yellow" -NoNewline; ")  new/next veribom"
-    Write-Host "f" -ForegroundColor "Yellow" -NoNewline; ")  full veribom, including warnings"
+    Write-Host "r" -ForegroundColor "Yellow" -NoNewline; ")  raw pdf, see what veribom it looking at"
     Write-Host "h" -ForegroundColor "Yellow" -NoNewline; ")  help, open the veribom project page"
     Write-Host "v" -ForegroundColor "Yellow" -NoNewline; ")  version of veribom"
     Write-Host "u" -ForegroundColor "Yellow" -NoNewline; ")  update/ check for updates"
@@ -378,8 +379,16 @@ check_for_updates
     :valid_command while($true) {
         $command = [Console]::ReadKey("No Echo").KeyChar
         switch ($command) {
-            "n"     {new_comparison}
-            "f"     {new_comparison -full}
+            "n"     {new_comparison; continue main}
+            "r"     {
+                Write-Host "select a drawing: " -NoNewline
+                $pdf_file = get_file -title "Select A Drawing PDF" -starting_dir $starting_directory -filter "Drawing (*.pdf)|*.pdf"
+                if ($pdf_file -eq "") {""; return}
+                Split-Path $pdf_file -Leaf
+                $global:starting_directory = Split-Path $pdf_file -Parent
+                ""
+                pdf_to_text $pdf_file
+            }
             "h"     {Start-Process "https://github.com/AustinPAmbrose/veribom"}
             "v"     {"";"$veribom_ver"}
             "u"     {"";check_for_updates}
@@ -389,7 +398,8 @@ check_for_updates
         break
     }
         ""
-        "press q to return to the main menu..."
+        Write-Host "press" -NoNewline
+        Write-Host " q " -NoNewline -ForegroundColor "Yellow"
+        Write-Host "to quit"
         while([Console]::ReadKey("No Echo").KeyChar -ne "q"){}
-        Clear-Host
 }
