@@ -1,3 +1,5 @@
+0.5.51
+improved the 'update' command for impatient people (me)
 0.5.50
 forgot to hide the cursor when updating :P
 0.5.49
