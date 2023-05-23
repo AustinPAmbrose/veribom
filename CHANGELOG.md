@@ -1,3 +1,8 @@
+0.5.47
+fixed some issues with multiple pn's on the same line
+the bom's parts list column can now be named 'Parts List' or 'Component'
+you can now use 'r' to see the raw pdf conversion
+you can now toggle errors, warnings, and ok parts after running a veribom
 0.4.46
 added a 'full' option. default veribom only returns errors now
 fixed a typo in the updater
