@@ -101,7 +101,6 @@ function check_for_updates {
         Remove-Job $download
 
         if ($new_version -gt $veribom_ver) {
-            [console]::CursorVisible = $true
             Write-Host "new update available!"
             Write-Host "version " -NoNewline
             Write-Host $veribom_ver.ToString() -ForegroundColor "Yellow" -NoNewline
